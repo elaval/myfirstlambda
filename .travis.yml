@@ -16,6 +16,7 @@ script:
   - cd src 
   - zip -r dep.zip .
   - mv dep.zip ../dist
+  - cd ..
 
 deploy:
   provider: s3
