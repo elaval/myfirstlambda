@@ -8,13 +8,13 @@ branches:
     - master
 
 before_script:
-
-script:
   - mkdir src  
   - mkdir dist
+  
+script:
   - mv *.md src
   - cd src 
-  - zip dep.zip
+  - zip -r dep.zip .
   - mv dep.zip ../dist
 
 deploy:
