@@ -31,7 +31,7 @@ deploy:
   local_dir: dist
 
 after_deploy:
-  - aws lambda update-function-code --function MyFirstLambda --s3-bucket visualiza.tideapps.com --s3-key myFirstLambda/dep.zip
+  - aws lambda update-function-code --function MyFirstLambda --s3-bucket visualiza.tideapps.com --s3-key myFirstLambda/dep.zip --region us-east-1
 
 notifications:
   email:
