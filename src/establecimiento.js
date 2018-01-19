@@ -37,7 +37,8 @@ function getClaims(event) {
 }
 
 function processEvent(event, context, callback) {
-    console.log('Calling MongoDB Atlas from AWS Lambda with event: ' + JSON.stringify(event));
+    console.log('Calling MongoDB Atlas from AWS Lambda with event: ');
+    // console.log('Calling MongoDB Atlas from AWS Lambda with event: ' + JSON.stringify(event));
     const jsonContents = JSON.parse(JSON.stringify(event));
     const claims = getClaims(event);
 
@@ -48,8 +49,14 @@ function processEvent(event, context, callback) {
         if (cachedDb == null) {
             console.log('=> connecting to database');
             MongoClient.connect(atlas_connection_uri, function (err, db) {
-                cachedDb = db;
-                return getDoc(db, jsonContents, claims, callback);
+                if (err) {
+                    console.log("Error: ", err);
+                    return;
+                } else {
+                    cachedDb = db;
+                    console.log("About to getDoc")
+                    return getDoc(db, jsonContents, claims, callback);
+                }
             });
         }
         else {
@@ -63,10 +70,12 @@ function processEvent(event, context, callback) {
 
 function getDoc (db, json, claims, callback) {
     const collection = db.db("educacion").collection("establecimientos");
-    const rbd = json.pathParameters.rbd;
+    const rbd = json.pathParameters.id;
+    console.log(json.pathParameters, rbd);
 
     collection.findOne({RBD:rbd})
     .then((d) => {
+        console.log("After findOne", rbd,d);
         callback(null, {
             headers:{
                 "Content-Type":"application/json"

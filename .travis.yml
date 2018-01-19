@@ -6,6 +6,10 @@ node_js:
 branches:
   only:
     - master
+    
+install:
+  - pip install --user awscli # install aws cli w/o sudo
+  - export PATH=$PATH:$HOME/.local/bin # put aws in the path
 
 before_script: 
   - mkdir dist
@@ -25,6 +29,8 @@ deploy:
   skip_cleanup: true
   upload-dir: myFirstLambda
   local_dir: dist
+
+after_deploy:
 
 notifications:
   email:
