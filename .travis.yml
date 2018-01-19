@@ -6,7 +6,7 @@ node_js:
 branches:
   only:
     - master
-    
+
 install:
   - pip install --user awscli # install aws cli w/o sudo
   - export PATH=$PATH:$HOME/.local/bin # put aws in the path
@@ -31,6 +31,7 @@ deploy:
   local_dir: dist
 
 after_deploy:
+  - aws lambda update-function-code --function MyFirstLambda --s3-bucket visualiza.tideapps.com --s3-key myFirstLambda/dep.zip
 
 notifications:
   email:
