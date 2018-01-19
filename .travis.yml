@@ -12,6 +12,7 @@ before_script:
   - cd src
   
 script:
+  - npm install
   - zip -r dep.zip .
   - mv dep.zip ../dist
   - cd ..
