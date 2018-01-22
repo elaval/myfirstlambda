@@ -13,17 +13,32 @@ let  ObjectID = require('mongodb').ObjectID;
 
 let atlas_connection_uri;
 let cachedDb = null;
+let database = "general_data";
+let collectionName = null;
 
 const collectionHandlers = {
-    "GET": listItems,
-    "POST": createItem
+    "evidence" : {
+        "GET": listItems,
+        "POST": createItem
+    },
+    "profile" : {
+        "GET": getItem_profile,
+        "POST": postItem_profile
+    }
   }
   
 const itemHandlers = {
-    "DELETE": deleteItem,
-    "GET": getItem,
-    "PATCH": patchItem,
-    "PUT": putItem
+    "evidence" : {
+        "DELETE": deleteItem,
+        "GET": getItem,
+        "PATCH": patchItem,
+        "PUT": putItem
+    }
+}
+
+const collections = {
+    "evidence" : "evidence",
+    "profile" : "profile"
 }
 
 exports.handler = (event, context, callback) => {
@@ -83,9 +98,13 @@ function processEvent(event, context, callback) {
 }
 
 function routeHandler(event, context, callback) {
+    // get resource in the path.  ´/profile´or ´/evidence' for '/evidence/1234'
+    let resource = event.resource.match(/^\/([^\/]+)/)[1];  
+    collectionName = collections[resource];
+
     let id = (event["pathParameters"] !== null && "id" in event["pathParameters"]) ? event["pathParameters"]["id"] : undefined;
-    let handlers = (id === undefined) ? collectionHandlers : itemHandlers;
-    
+    let handlers = (id === undefined) ? collectionHandlers[resource] : itemHandlers[resource];
+
     let httpMethod = event["httpMethod"];
     if (httpMethod in handlers) {
         return handlers[httpMethod](event, context, callback);
@@ -94,7 +113,7 @@ function routeHandler(event, context, callback) {
 
 
 function listItems(event, context, callback) {
-    const collection = cachedDb.db("general_data").collection("evidence");
+    const collection = cachedDb.db(database).collection(collectionName);
     const jsonContents = JSON.parse(JSON.stringify(event));
     const claims = getClaims(event);
     const userId = claims && claims.sub;
@@ -117,7 +136,7 @@ function listItems(event, context, callback) {
 }
   
 function createItem(event, context, callback) {
-    const collection = cachedDb.db("general_data").collection("evidence");
+    const collection = cachedDb.db(database).collection(collectionName);
 
     let objectToInsert = JSON.parse(event.body);
     const claims = getClaims(event);
@@ -154,7 +173,7 @@ function createItem(event, context, callback) {
 }
 
 function deleteItem(event, context, callback) {
-    const collection = cachedDb.db("general_data").collection("evidence");
+    const collection = cachedDb.db(database).collection(collectionName);
 
     const jsonContents = JSON.parse(JSON.stringify(event));
     const id = jsonContents.pathParameters['id'];
@@ -198,7 +217,7 @@ function deleteItem(event, context, callback) {
 }
 
 function getItem(event, context, callback) {
-    const collection = cachedDb.db("general_data").collection("evidence");
+    const collection = cachedDb.db(database).collection(collectionName);
 
     const jsonContents = JSON.parse(JSON.stringify(event));
     const id = jsonContents.pathParameters['id'];
@@ -236,7 +255,7 @@ function getItem(event, context, callback) {
 }
 
 function patchItem(event, context, callback) {
-    const collection = cachedDb.db("general_data").collection("evidence");
+    const collection = cachedDb.db(database).collection(collectionName);
 
     const objectToPatch = JSON.parse(event.body);
 
@@ -289,20 +308,80 @@ function patchItem(event, context, callback) {
 
 }
 
-function postItem(event, context, callback) {
-    const response = {
-        statusCode: 400,
-        headers: {
-            "Content-Type" : "application/json"
-          },
-        body: JSON.stringify({ msg: "Cannot post to a specific Id.  POST in the collection to create a new item oritem, or PUT/PATCH to update an existing item"})
-    };
+function getItem_profile(event, context, callback) {
+    const collection = cachedDb.db(database).collection(collectionName);
+    
+    const claims = getClaims(event);
+    const userId = claims && claims.sub;
 
-    callback(null, response);
+    collection.findOne({'userId':userId})
+    .then((doc) => {
+        let response = {
+            statusCode: 200,
+            headers: {
+                "Content-Type" : "application/json",
+              },
+            body: JSON.stringify(doc)
+        };
+
+        if (!doc) {
+            response.statusCode = 200;
+        }
+    
+        callback(null, response);
+    })
+    .catch((err) => {
+        const response = {
+            statusCode: 500,
+            headers: {
+                "Content-Type" : "application/json"
+              },
+            body: JSON.stringify(err)
+        };
+    
+        callback(null, response);
+    })
+}
+
+
+function postItem_profile(event, context, callback) {
+    const collection = cachedDb.db(database).collection(collectionName);
+
+    let objectToUpsert = JSON.parse(event.body);
+    const claims = getClaims(event);
+    const userId = claims && claims.sub;
+
+    objectToUpsert['userId']=userId;
+
+    collection.save(objectToUpsert)
+    .then((r) => {
+        const id = objectToUpsert._id;
+        const response = {
+            statusCode: 201,
+            headers: {
+                "Content-Type" : "application/json",
+                "Location": `/profile`
+              },
+            body: JSON.stringify(objectToUpsert)
+        };
+    
+        callback(null, response);
+    })
+    .catch((err) => {
+        const response = {
+            statusCode: 500,
+            headers: {
+                "Content-Type" : "application/json"
+              },
+            body: JSON.stringify(err)
+        };
+    
+        callback(null, response);
+    })
 }
 
 function putItem(event, context, callback) {
-    const collection = cachedDb.db("general_data").collection("evidence");
+    const collection = cachedDb.db(database).collection(collectionName);
 
     const object = JSON.parse(event.body);
 
