@@ -23,7 +23,7 @@ const collectionHandlers = {
     },
     "profile" : {
         "GET": getItem_profile,
-        "POST": echo
+        "POST": postItem_profile
     }
   }
   
