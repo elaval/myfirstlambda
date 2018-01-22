@@ -23,7 +23,7 @@ const collectionHandlers = {
     },
     "profile" : {
         "GET": getItem_profile,
-        "POST": postItem_profile
+        "POST": echo
     }
   }
   
@@ -341,6 +341,19 @@ function getItem_profile(event, context, callback) {
     
         callback(null, response);
     })
+}
+
+function echo(event, context, callback) {
+    const response = {
+        statusCode: 201,
+        headers: {
+            "Content-Type" : "application/json",
+            "Location": `/profile`
+          },
+        body: JSON.stringify(event)
+    };
+
+    callback(null, response);
 }
 
 
