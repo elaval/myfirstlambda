@@ -125,13 +125,9 @@ function listItems(event, context, callback) {
     var cursor = collection.find({userId:userId});
     cursor.toArray()
     .then((d) => {
-        callback(null, {
-            headers:{
-                "Content-Type":"application/json"
-            },
-            statusCode: 200,
-            body:JSON.stringify({user:userId, data:d})
-        });
+        const response = buildResponse(200, {user:userId, data:d});
+        callback(null, response);
+
     })
 }
   
@@ -147,25 +143,14 @@ function createItem(event, context, callback) {
     collection.insertOne(objectToInsert)
     .then((r) => {
         const id = objectToInsert._id;
-        const response = {
-            statusCode: 201,
-            headers: {
-                "Content-Type" : "application/json",
-                "Location": `/evidence/${id}`
-              },
-            body: JSON.stringify(objectToInsert)
-        };
+        const response = buildResponse(201, objectToInsert);
+
     
         callback(null, response);
     })
     .catch((err) => {
-        const response = {
-            statusCode: 500,
-            headers: {
-                "Content-Type" : "application/json"
-              },
-            body: JSON.stringify(err)
-        };
+        const response = buildResponse(500, err);
+
     
         callback(null, response);
     })
@@ -190,13 +175,8 @@ function deleteItem(event, context, callback) {
 
     collection.deleteOne({'_id':objectId, 'userId': userId})
     .then((r) => {
-        let response = {
-            statusCode: 204,
-            headers: {
-                "Content-Type" : "application/json",
-              },
-            body: null
-        };
+        const response = buildResponse(204, null);
+
 
         if (r && r.result && r.result.n == 0) {
             response.statusCode = 404;
@@ -204,13 +184,8 @@ function deleteItem(event, context, callback) {
         callback(null, response);
     })
     .catch((err) => {
-        const response = {
-            statusCode: 500,
-            headers: {
-                "Content-Type" : "application/json"
-              },
-            body: JSON.stringify(err)
-        };
+        const response = buildResponse(500, err);
+
     
         callback(null, response);
     })
@@ -227,13 +202,7 @@ function getItem(event, context, callback) {
 
     collection.findOne({'_id':ObjectID(id), 'userId': userId})
     .then((doc) => {
-        let response = {
-            statusCode: 200,
-            headers: {
-                "Content-Type" : "application/json",
-              },
-            body: JSON.stringify(doc)
-        };
+        const response = buildResponse(200, doc);
 
         if (!doc) {
             response.statusCode = 404;
@@ -242,13 +211,8 @@ function getItem(event, context, callback) {
         callback(null, response);
     })
     .catch((err) => {
-        const response = {
-            statusCode: 500,
-            headers: {
-                "Content-Type" : "application/json"
-              },
-            body: JSON.stringify(err)
-        };
+        const response = buildResponse(500, err);
+
     
         callback(null, response);
     })
@@ -279,13 +243,8 @@ function patchItem(event, context, callback) {
         {"new": true} // Return the new object
     )
     .then((r) => {
-        const response = {
-            statusCode: 200,
-            headers: {
-                "Content-Type" : "application/json",
-              },
-            body: JSON.stringify(r.value)
-        };
+        const response = buildResponse(200, r.value);
+
 
         if (r.lastErrorObject.n == 0) {
             response.statusCode = 404;
@@ -294,13 +253,7 @@ function patchItem(event, context, callback) {
         callback(null, response);
     })
     .catch((err) => {
-        const response = {
-            statusCode: 404,
-            headers: {
-                "Content-Type" : "application/json"
-              },
-            body: JSON.stringify(err)
-        };
+        const response = buildResponse(400, err);
     
         callback(null, response);
     })
@@ -316,14 +269,7 @@ function getItem_profile(event, context, callback) {
 
     collection.findOne({'userId':userId})
     .then((doc) => {
-        let response = {
-            statusCode: 200,
-            headers: {
-                "Content-Type" : "application/json",
-                "Access-Control-Allow-Origin" : "*",
-              },
-            body: JSON.stringify(doc)
-        };
+        let response = buildResponse(200, doc)
 
         if (!doc) {
             response.statusCode = 200;
@@ -332,14 +278,7 @@ function getItem_profile(event, context, callback) {
         callback(null, response);
     })
     .catch((err) => {
-        const response = {
-            statusCode: 500,
-            headers: {
-                "Content-Type" : "application/json"
-              },
-            body: JSON.stringify(err)
-        };
-    
+        const response = buildResponse(500, err);
         callback(null, response);
     })
 }
@@ -370,26 +309,12 @@ function postItem_profile(event, context, callback) {
     collection.save(objectToUpsert)
     .then((r) => {
         const id = objectToUpsert._id;
-        const response = {
-            statusCode: 201,
-            headers: {
-                "Content-Type" : "application/json",
-                "Location": `/profile`
-              },
-            body: JSON.stringify(objectToUpsert)
-        };
-    
+        const response = buildResponse(201, objectToUpsert);
+
         callback(null, response);
     })
     .catch((err) => {
-        const response = {
-            statusCode: 500,
-            headers: {
-                "Content-Type" : "application/json"
-              },
-            body: JSON.stringify(err)
-        };
-    
+        const response = buildResponse(500, err);
         callback(null, response);
     })
 }
@@ -437,6 +362,18 @@ function putItem(event, context, callback) {
     })
 
 
+}
+
+function buildResponse(code, body) {
+    const response = {
+        statusCode: code,
+        headers: {
+            "Content-Type" : "application/json",
+            "Access-Control-Allow-Origin" : "*",
+          },
+        body: JSON.stringify(body)
+    };
+    return response
 }
 
 function getClaims(event) {
