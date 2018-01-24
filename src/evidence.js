@@ -10,6 +10,7 @@ console.log('Loading function');
  */
 let  MongoClient = require('mongodb').MongoClient;
 let  ObjectID = require('mongodb').ObjectID;
+const _ = require("lodash");
 
 let atlas_connection_uri;
 let cachedDb = null;
@@ -42,9 +43,6 @@ const collections = {
 }
 
 exports.handler = (event, context, callback) => {
-    var uri = process.env['MONGODB_ATLAS_CLUSTER_URI'] || null;
-    console.log("URI", uri);
-
     var uri = process.env['MONGODB_ATLAS_CLUSTER_URI'] || null;
     console.log("URI", uri);
     
@@ -304,9 +302,10 @@ function postItem_profile(event, context, callback) {
     const claims = getClaims(event);
     const userId = claims && claims.sub;
 
-    objectToUpsert['userId']=userId;
+    objectToUpsert['userId'] = userId;
+    _.omit(objectToUpsert, '_id'); // We remove the _id to avoid conflicts/duplicates
 
-    collection.save(objectToUpsert)
+    collection.update({'userId': userId}, {$set:objectToUpsert}, {upsert:true})
     .then((r) => {
         const id = objectToUpsert._id;
         const response = buildResponse(201, objectToUpsert);
