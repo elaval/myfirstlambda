@@ -303,7 +303,7 @@ function postItem_profile(event, context, callback) {
     const userId = claims && claims.sub;
 
     objectToUpsert['userId'] = userId;
-    _.omit(objectToUpsert, '_id'); // We remove the _id to avoid conflicts/duplicates
+    objectToUpsert = _.omit(objectToUpsert, '_id'); // We remove the _id to avoid conflicts/duplicates
 
     collection.update({'userId': userId}, {$set:objectToUpsert}, {upsert:true})
     .then((r) => {
